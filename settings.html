@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>ChatMate Settings</title>
+    <style>
+      body {
+        background-color: #f7f7f7;
+        font-family: sans-serif;
+        margin: 0;
+        padding: 20px;
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 24px 0 16px;
+      }
+      label {
+        display: block;
+        font-size: 16px;
+        margin-bottom: 8px;
+      }
+      input[type="text"], input[type="password"], select {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        display: block;
+        font-size: 16px;
+        margin-bottom: 16px;
+        padding: 8px;
+        width: 100%;
+      }
+      button {
+        background-color: #007aff;
+        border: none;
+        border-radius: 4px;
+        color: #fff;
+        cursor: pointer;
+        display: block;
+        font-size: 16px;
+        margin-top: 16px;
+        padding: 8px;
+        width: 100%;
+      }
+      button:hover {
+        background-color: #0062cc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>快捷设置</h1>
+
+    <form id="settings-form">
+      <label for="shortcut-input">Global Shortcut:</label>
+      <div class="input-container">
+        <input id="shortcut-input" type="text">
+        <span id="shortcut-clear-button" class="clear-button"></span>
+      </div>
+
+      <label for="username-input">Username:</label>
+      <input type="text" id="username-input" name="username" required>
+
+      <label for="theme-select">Theme:</label>
+      <select id="theme-select" name="theme">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+      <button type="submit">Save</button>
+    </form>
+    <script>
+      const settingsForm = document.getElementById('settings-form');
+      settingsForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const formData = new FormData(settingsForm);
+        const settings = {
+          username: formData.get('username'),
+          password: formData.get('password'),
+          theme: formData.get('theme')
+        };
+        // 保存设置并关闭窗口
+        window.opener.postMessage({ type: 'save-settings', settings });
+        window.close();
+      });
+    </script>
+    <!-- add settings.js file -->
+    <script src="settings.js"></script>
+  </body>
+</html>

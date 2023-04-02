@@ -1,0 +1,22 @@
+{
+  "name": "chatmate",
+  "version": "1.0.0",
+  "description": "A ChatGPT Client build by Electron",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "duyalei",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^23.2.1",
+    "electron-builder": "^23.6.0",
+    "electron-updater": "^5.3.0"
+  },
+  "dependencies": {
+    "electron-localshortcut": "^3.2.1",
+    "electron-menubar": "^1.0.2",
+    "electron-store": "^8.1.0",
+    "mousetrap": "^1.6.5"
+  }
+}

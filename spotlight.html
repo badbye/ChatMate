@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        margin: 0;
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        border-radius: 10px;
+        overflow: hidden;
+        /* transition: height 0.5s ease-in-out; */
+      }
+      #search {
+        background-color: azure;
+        width: 100%;
+        opacity: 0.8;
+        padding: 20px;
+        font-size: 24px;
+        outline: none;
+        border: none;
+        flex-shrink: 0; /* 防止搜索框在内容增加时被挤压 */
+      }
+      #response {
+        background-color: whitesmoke;
+        word-wrap: break-word;
+      }
+      /* chatGPT output */
+      .rounded-md {
+       border-radius: .375rem;
+      }
+      .mb-4 {
+       margin-bottom: 1rem;
+      }
+    .bg-black {
+        --tw-bg-opacity: 1;
+        background-color: rgba(0,0,0,var(--tw-bg-opacity));
+    }
+    </style>
+    <script>
+        const { remote, ipcRenderer } = require('electron');
+        const maxHeight = 600;
+        const minHeight = 100;
+        // 在页面加载完成后自动聚焦到搜索框
+        window.onload = function () {
+            document.getElementById('search').focus();
+        };
+
+        // 按下 ESC 键时关闭窗口
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                window.close();
+            }
+        });
+
+        ipcRenderer.on('set-spotlight-response', async (event, longText) => {
+            await showResponse(longText);
+        });
+
+        function sendToMainProcess() {
+          const searchInput = document.getElementById('search');
+          ipcRenderer.send('send-query', searchInput.value);
+          clearResponse();
+          document.getElementById('loading').style.display = 'flex';
+        }
+
+        function clearResponse() {
+          const responseDiv = document.getElementById('response');
+          responseDiv.style.display = 'none';
+          responseDiv.style.padding = '0';
+          updateClienHeight();
+        }
+
+        async function showResponse(response) {
+          document.getElementById('loading').style.display = 'none';
+          const responseDiv = document.getElementById('response');
+          responseDiv.style.display = 'block';
+          responseDiv.style.padding = '15px';
+          responseDiv.innerHTML = response;
+          await updateClienHeight();
+        }
+
+        async function updateClienHeight() {
+          // 等待一个动画帧以确保 DOM 更新完成
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+          const windowHeight = document.body.scrollHeight;
+          window.resizeTo(document.body.clientWidth, Math.min(windowHeight, maxHeight));
+          if (windowHeight > maxHeight) {
+            document.body.style.overflowY = 'scroll';
+          }
+        }
+      </script>
+  </head>
+  <body>
+    <input id="search" type="text" placeholder="Type your prompt..." onkeydown="if (event.key === 'Enter') sendToMainProcess()">
+    <div id="loading" style="display: none;">Loading...</div>
+    <div id="response" style="display: none;"></div>
+  </body>
+</html>
