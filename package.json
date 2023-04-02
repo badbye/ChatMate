@@ -17,6 +17,8 @@
     "electron-localshortcut": "^3.2.1",
     "electron-menubar": "^1.0.2",
     "electron-store": "^8.1.0",
+    "fs-extra": "^11.1.1",
+    "jquery": "^3.6.4",
     "mousetrap": "^1.6.5"
   }
 }

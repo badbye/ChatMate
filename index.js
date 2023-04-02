@@ -1,7 +1,8 @@
 const { app, BrowserWindow, session, Menu, ipcMain, globalShortcut, clipboard } = require('electron')
 const path = require('path')
 const Store = require('electron-store');
-const {SHORTCUT, controlKey} = require('./utils');
+const {SHORTCUT, EXTENSIONS, controlKey, translateQuickPrompt} = require('./utils');
+const { registerExtensions } = require('./extensions');
 
 // const { menubar } = require('electron-menubar');
 
@@ -51,7 +52,7 @@ function isSpotlightQuerying(headers) {
   return spotlightWin && headers['content-type'] && headers['content-type'].toString().includes('text/event-stream')
 }
 
-function createWindow () {
+function createChatGPTWindow () {
   const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36 Edg/109.0.1518.78'
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
     details.requestHeaders['User-Agent'] = userAgent;
@@ -150,12 +151,16 @@ function setGlobalShortcut(globalKey) {
   });
 }
 // 当应用程序准备就绪时创建窗口
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await registerExtensions(session, store.get(EXTENSIONS, []));
+
   initializeShortcuts();
 
   // 监听来自 spotlight 的消息
   ipcMain.on('send-query', (event, query) => {
-    chatGPTWin.webContents.send('send-query', query)
+    chatGPTWin.webContents.send('send-query', 
+      translateQuickPrompt(query, store.get(SHORTCUT.quickPromptList, []))
+    )
   });
 
   // 接收到 chatGPT 的响应
@@ -178,9 +183,9 @@ app.whenReady().then(() => {
     store.set('settings', settings);
   })
 
-  createWindow();
+  createChatGPTWindow();
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) createChatGPTWindow()
   })
 })
 
@@ -190,3 +195,14 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
+// if (process.platform === 'darwin') {
+//   app.on('will-finish-launching', () => {
+//     // 加载 Info.plist 文件
+//     const plistPath = path.join(__dirname, 'Info.plist');
+//     app.setAboutPanelOptions({ applicationName: app.name, version: app.getVersion() });
+//     app.setActivationPolicy('regular');
+//     app.dock.hide();
+//     app.setAboutPanelOptions({ applicationName: app.name, version: app.getVersion() });
+//     // app.dock.setIcon(path.join(__dirname, '..', 'icon.icns'));
+//   });
+// }

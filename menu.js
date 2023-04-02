@@ -56,7 +56,7 @@ function createMenu(app, window) {
                   settingsWindow.on('closed', () => {
                     settingsWindow = null;
                   });
-                //   settingsWindow.webContents.openDevTools();
+                  // settingsWindow.webContents.openDevTools();
                 }
               }
             ]

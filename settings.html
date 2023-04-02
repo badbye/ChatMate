@@ -1,89 +1,104 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>ChatMate Settings</title>
+<head>
+  <meta charset="UTF-8">
+  <title>Settings</title>
+  <!-- 引入 Bootstrap CSS 文件 -->
+  <link rel="stylesheet" href="resources/bootstrap-4.0.0.min.css">
     <style>
-      body {
-        background-color: #f7f7f7;
-        font-family: sans-serif;
-        margin: 0;
-        padding: 20px;
-      }
-      h1 {
-        font-size: 24px;
-        font-weight: bold;
-        margin: 24px 0 16px;
-      }
-      label {
-        display: block;
-        font-size: 16px;
-        margin-bottom: 8px;
-      }
-      input[type="text"], input[type="password"], select {
-        background-color: #fff;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-sizing: border-box;
-        display: block;
-        font-size: 16px;
-        margin-bottom: 16px;
-        padding: 8px;
+    .prompt-input{
         width: 100%;
-      }
-      button {
-        background-color: #007aff;
-        border: none;
-        border-radius: 4px;
-        color: #fff;
-        cursor: pointer;
-        display: block;
-        font-size: 16px;
-        margin-top: 16px;
-        padding: 8px;
-        width: 100%;
-      }
-      button:hover {
-        background-color: #0062cc;
-      }
+        min-height: 24px;
+        max-height: 72px;
+        overflow-y: auto;
+    }
     </style>
-  </head>
-  <body>
-    <h1>快捷设置</h1>
-
-    <form id="settings-form">
-      <label for="shortcut-input">Global Shortcut:</label>
-      <div class="input-container">
-        <input id="shortcut-input" type="text">
-        <span id="shortcut-clear-button" class="clear-button"></span>
+</head>
+<body>
+  <div class="container">
+    <ul class="nav nav-tabs mt-3">
+      <li class="nav-item">
+        <a class="nav-link active" data-toggle="tab" href="#shortcut">快捷键</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-toggle="tab" href="#extension">Extensions</a>
+      </li>
+    </ul>
+    <div class="tab-content mt-3">
+      <div id="shortcut" class="tab-pane active">
+        <div class="form-group">
+          <label for="shortcut-input">设置快捷键</label>
+          <div class="input-group">
+            <input id="shortcut-input" type="text" class="form-control">
+            <div class="input-group-append">
+              <button id="clear-shortcut" class="btn btn-outline-secondary" type="button">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <button id="add-quick-prompt" type="button" class="btn btn-primary">Add Quick Prompt</button>
+            <button id="save-quick-prompt" type="button" class="btn btn-success">Save</button>
+          </div>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th style="width: 15%">Quick Text</th>
+                <th style="width: 60%">Prompt</th>
+                <th style="width: 20%">Title</th>
+                <th style="width: 5%"></th>
+              </tr>
+            </thead>
+            <tbody id="quick-prompt-list">
+              <tr>
+                <td><input type="text" class="form-control" value="t"></td>
+                <td><textarea class="form-control prompt-input" value="I want you to act as an English translator, spelling corrector and improver. I will speak to you in any language and you will detect the language, translate it and answer in the corrected and improved version of my text, in English. I want you to replace my simplified A0-level words and sentences with more beautiful and elegant, upper level English words and sentences. Keep the meaning same, but make them more literary. I want you to only reply the correction, the improvements and nothing else, do not write explanations. My first sentence is:"></textarea></td>
+                <td><input type="text" class="form-control" value="Translate"></td>
+                <td><button type="button" class="btn btn-danger"><i class="fas fa-trash"></i></button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <label for="username-input">Username:</label>
-      <input type="text" id="username-input" name="username" required>
-
-      <label for="theme-select">Theme:</label>
-      <select id="theme-select" name="theme">
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select>
-      <button type="submit">Save</button>
-    </form>
-    <script>
-      const settingsForm = document.getElementById('settings-form');
-      settingsForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const formData = new FormData(settingsForm);
-        const settings = {
-          username: formData.get('username'),
-          password: formData.get('password'),
-          theme: formData.get('theme')
-        };
-        // 保存设置并关闭窗口
-        window.opener.postMessage({ type: 'save-settings', settings });
-        window.close();
-      });
-    </script>
-    <!-- add settings.js file -->
-    <script src="settings.js"></script>
-  </body>
+      <div id="extension" class="tab-pane">
+        <!-- add description -->
+        <p>Note: <a href="https://www.electronjs.org/zh/docs/latest/tutorial/devtools-extension#%E6%89%8B%E5%8A%A8%E5%8A%A0%E8%BD%BD-devtools-%E6%89%A9%E5%B1%95" target="_blank">Check here</a> for the extension paths of various systems, making sure to include the extension version number. </p>
+        <p>For example, the extension path for a certain version on Mac system is: 
+            <code>/Users/xxx/Library/ApplicationSupport/Microsoft Edge/Default/Extensions/jjdnakkfjnnbbckhifcfchagnpofjffo/2.4.6_0</code>
+        </p>
+        <div class="form-group">
+            <button id="add-extension" type="button" class="btn btn-primary">Add Extension</button>
+            <button id="save-extension" type="button" class="btn btn-success">Save</button>
+        </div>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Extension List:</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="extension-list">
+            <tr>
+              <td><input type="text" class="form-control" value="/path/to/extension"></td>
+              <td><button type="button" class="btn btn-danger"><i class="fas fa-trash"></i></button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>      
+    </div>
+  </div>
+  <script>
+    const { ipcRenderer } = require('electron');
+    const Store = require('electron-store');
+    const store = new Store();
+    window.$ = window.jQuery = require('jquery');
+  </script>
+  <!-- 引入 Bootstrap JS 文件和 FontAwesome 图标库 -->
+  <script src="resources/popper-1.12.9.min.js"></script>
+  <script src="resources/bootstrap-4.0.0.min.js"></script>
+  <script src="resources/font-all.js"></script>
+  <!-- <script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script> -->
+  <script src="settings-extension.js"></script>
+  <script src="settings-shorcut.js"></script>
+</body>
 </html>
