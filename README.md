@@ -2,9 +2,28 @@
 
 基于 Electron 的 ChatGPT 客户端。
 
+
+安装依赖:
+
+```
+export ELECTRON_MIRROR=https://npm.taobao.org/mirrors/electron/
+export ELECTRON_BUILDER_BINARIES_MIRROR=https://npm.taobao.org/mirrors/electron-builder-binaries/
+npm install
+```
+
+开发:
+```
+npx electron .
+```
+
+打包:
+```
+npx electron-builder --win
+npx electron-builder --mac
+```
+
 ## 快捷输入
 
-让你的输入快人一步。
 
 ## 插件集成
 
