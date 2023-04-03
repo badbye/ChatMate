@@ -1,7 +1,7 @@
-const { app, BrowserWindow, session, Menu, ipcMain, globalShortcut, clipboard } = require('electron')
+const { app, BrowserWindow, session, Menu, ipcMain, globalShortcut, clipboard, dialog } = require('electron')
 const path = require('path')
 const Store = require('electron-store');
-const {SHORTCUT, EXTENSIONS, controlKey, translateQuickPrompt} = require('./utils');
+const {SHORTCUT, EXTENSIONS, controlKey, readJS} = require('./utils');
 const { registerExtensions } = require('./extensions');
 
 // const { menubar } = require('electron-menubar');
@@ -31,7 +31,8 @@ function createSpotlightWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      clipboard: true
+      clipboard: true,
+      nativeWindowOpen: true
     },
   });
 
@@ -79,11 +80,7 @@ function createChatGPTWindow () {
     if (isSpotlightQuerying(details.responseHeaders)) {
       // extract the response from the chatGPT every 500ms
       chatGPTWin.webContents.executeJavaScript(`
-        var interval = setInterval(() => {
-          x = document.querySelectorAll('.markdown')
-          response = x[x.length-1].innerHTML
-          window.electronAPI.setResponse(response)
-        }, 500)
+        var interval = setInterval(() => { sendReponse() }, 500)
       `)
     }
   });
@@ -92,39 +89,18 @@ function createChatGPTWindow () {
     // extract the response from the chatGPT when the response is completed
     if (isSpotlightQuerying(details.responseHeaders)) {
       chatGPTWin.webContents.executeJavaScript(`
-        if (interval) clearInterval(interval)
-        x = document.querySelectorAll('.markdown')
-        response = x[x.length-1].innerHTML
-        window.electronAPI.setResponse(response)
+        if (interval) { clearInterval(interval) }
+        sendReponse()
+        // run again in case the response is not completed
+        setTimeout(() => { sendReponse() }, 300)
       `)
     }
   })
 
   chatGPTWin.loadURL('https://chat.openai.com')
   chatGPTWin.webContents.on('did-finish-load', () => {
-    // 在页面中注入脚本, 用于向 chatGPT 发送消息
-    chatGPTWin.webContents.executeJavaScript(`
-      function sendMsg(msg) {
-        const textarea = document.querySelector('textarea');
-        textarea.value = msg;
-        const enterKeyEvent = new KeyboardEvent('keydown', {
-          code: 'Enter',
-          key: 'Enter',
-          charCode: 13,
-          keyCode: 13,
-          which: 13
-        })
-      
-        // 在 textarea 上触发键盘事件
-        textarea.dispatchEvent(enterKeyEvent)
-        textarea.focus()
-        textarea.nextElementSibling.click()
-      }
-      window.electronAPI.sendQuery((event, value) => {
-        console.log('recieve value: ' + value)
-        sendMsg(value)
-      })
-    `)
+    // 在页面中注入脚本, 用于主线程和 chatGPT 窗口之间的通信
+    chatGPTWin.webContents.executeJavaScript(readJS('chatgpt-injection.js'))
   })
   // chatGPTWin.webContents.openDevTools()
 }
@@ -135,20 +111,26 @@ function initializeShortcuts() {
     globalKey = store.get(SHORTCUT.global);
   } else {
     globalKey = controlKey('M'); // 默认快捷键
-    store.set(SHORTCUT.global, globalKey);
   }
-  setGlobalShortcut(globalKey)
+  try {
+    setGlobalShortcut(globalKey)
+  } catch (err) {
+    dialog.showErrorBox('Error', `Register global shortcut failed: ${err.message}. Will delete the shortcut automatically.`);
+    store.delete(SHORTCUT.global);
+  }
 }
 
 function setGlobalShortcut(globalKey) {
   console.log('change globalKey: ' + globalKey)
+  // deal with the possible error
   globalShortcut.register(globalKey, () => {
     if (!spotlightWin) {
       createSpotlightWindow();
     } else {
       spotlightWin.close();
     }
-  });
+  })
+  store.set(SHORTCUT.global, globalKey);
 }
 // 当应用程序准备就绪时创建窗口
 app.whenReady().then(async () => {
@@ -158,8 +140,13 @@ app.whenReady().then(async () => {
 
   // 监听来自 spotlight 的消息
   ipcMain.on('send-query', (event, query) => {
-    chatGPTWin.webContents.send('send-query', 
-      translateQuickPrompt(query, store.get(SHORTCUT.quickPromptList, []))
+    chatGPTWin.webContents.send(
+      'send-quick-query', 
+      {
+        query, 
+        promptList: store.get(SHORTCUT.quickPromptList, []),
+        matchConversation: store.get(SHORTCUT.matchConversation, false)
+      }
     )
   });
 
@@ -172,10 +159,12 @@ app.whenReady().then(async () => {
 
   ipcMain.on('shortcut-register-global', (event, key) => {
     if (store.get(SHORTCUT.global)) {
-      globalShortcut.unregister(store.get(SHORTCUT.global));
+      const key = store.get(SHORTCUT.global);
+      if (globalShortcut.isRegistered(key)) {
+        globalShortcut.unregister(key)
+      }
     }
     store.set(SHORTCUT.global, key);
-    setGlobalShortcut(key);
   });
 
   ipcMain.on('save-settings', (event, settings) => {

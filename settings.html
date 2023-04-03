@@ -36,29 +36,38 @@
               </button>
             </div>
           </div>
-          <div class="form-group">
-            <button id="add-quick-prompt" type="button" class="btn btn-primary">Add Quick Prompt</button>
-            <button id="save-quick-prompt" type="button" class="btn btn-success">Save</button>
-          </div>
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th style="width: 15%">Quick Text</th>
-                <th style="width: 60%">Prompt</th>
-                <th style="width: 20%">Title</th>
-                <th style="width: 5%"></th>
-              </tr>
-            </thead>
-            <tbody id="quick-prompt-list">
-              <tr>
-                <td><input type="text" class="form-control" value="t"></td>
-                <td><textarea class="form-control prompt-input" value="I want you to act as an English translator, spelling corrector and improver. I will speak to you in any language and you will detect the language, translate it and answer in the corrected and improved version of my text, in English. I want you to replace my simplified A0-level words and sentences with more beautiful and elegant, upper level English words and sentences. Keep the meaning same, but make them more literary. I want you to only reply the correction, the improvements and nothing else, do not write explanations. My first sentence is:"></textarea></td>
-                <td><input type="text" class="form-control" value="Translate"></td>
-                <td><button type="button" class="btn btn-danger"><i class="fas fa-trash"></i></button></td>
-              </tr>
-            </tbody>
-          </table>
         </div>
+        <div class="form-group">
+          <button id="add-quick-prompt" type="button" class="btn btn-primary">Add Quick Prompt</button>
+          <button id="save-quick-prompt" type="button" class="btn btn-success">Save</button>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="match-conversation-title">
+            <label class="form-check-label" for="mySwitch">Match Conversation</label>
+            <p>Match Conversation: if true, will find the conversation whose tile matched the prompt. 
+              It may take more time since the page is reloaded.
+            </p>
+          </div>
+        </div>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th style="width: 15%">Quick Text</th>
+              <th style="width: 60%">Prompt</th>
+              <th style="width: 20%">
+                Title
+              </th>
+              <th style="width: 5%"></th>
+            </tr>
+          </thead>
+          <tbody id="quick-prompt-list">
+            <tr>
+              <td><input type="text" class="form-control" value="t"></td>
+              <td><textarea class="form-control prompt-input" value="I want you to act as an English translator, spelling corrector and improver. I will speak to you in any language and you will detect the language, translate it and answer in the corrected and improved version of my text, in English. I want you to replace my simplified A0-level words and sentences with more beautiful and elegant, upper level English words and sentences. Keep the meaning same, but make them more literary. I want you to only reply the correction, the improvements and nothing else, do not write explanations. My first sentence is:"></textarea></td>
+              <td><input type="text" class="form-control" value="Translate"></td>
+              <td><button type="button" class="btn btn-danger"><i class="fas fa-trash"></i></button></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
       <div id="extension" class="tab-pane">
         <!-- add description -->

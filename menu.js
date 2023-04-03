@@ -50,6 +50,7 @@ function createMenu(app, window) {
                       nodeIntegration: true,
                       contextIsolation: false,
                       enableRemoteModule: true,
+                      nativeWindowOpen: true
                     }
                   });
                   settingsWindow.loadFile(path.join(__dirname, 'settings.html'));

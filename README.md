@@ -25,6 +25,19 @@ npx electron-builder --mac
 ## 快捷输入
 
 
+对话选择
+```javascript
+function selectTopic(topic) {
+    const conversations = document.querySelectorAll('.text-ellipsis')
+    for (let i = 0; i < conversations.length; i++) {
+        if (conversations[i].textContent === topic) {
+            conversations[i].click()
+            break
+        }
+    }
+}
+```
+
 ## 插件集成
 
 大部分的需求可以通过插件集成的方法来解决。
