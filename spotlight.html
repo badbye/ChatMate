@@ -20,7 +20,36 @@
         outline: none;
         border: none;
         flex-shrink: 0; /* 防止搜索框在内容增加时被挤压 */
+
+        resize: vertical;
+        min-height: 30px;
+        max-height: 200px;
+        overflow-y: auto;
       }
+      #loading {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        margin: auto;
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 5px solid #3498db;
+        animation: spin 2s linear infinite;
+        display: none;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .loading.show {
+        display: block;
+      }
+
       #response {
         background-color: whitesmoke;
         word-wrap: break-word;
@@ -43,23 +72,27 @@
         const minHeight = 100;
         // 在页面加载完成后自动聚焦到搜索框
         window.onload = function () {
-            document.getElementById('search').focus();
+          document.getElementById('search').focus();
         };
+
+        // searchWidget.addEventListener('input', () => {
+        //   input.style.height = 'auto';
+        //   input.style.height = input.scrollHeight + 'px';
+        // });
 
         // 按下 ESC 键时关闭窗口
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                window.close();
-            }
+          if (event.key === 'Escape') {
+            window.close();
+          }
         });
 
         ipcRenderer.on('set-spotlight-response', async (event, longText) => {
-            await showResponse(longText);
+          await showResponse(longText);
         });
 
         function sendToMainProcess() {
-          const searchInput = document.getElementById('search');
-          ipcRenderer.send('send-query', searchInput.value);
+          ipcRenderer.send('send-query', document.getElementById('search').value);
           clearResponse();
           document.getElementById('loading').style.display = 'flex';
         }
@@ -92,8 +125,8 @@
       </script>
   </head>
   <body>
-    <input id="search" type="text" placeholder="Type your prompt..." onkeydown="if (event.key === 'Enter') sendToMainProcess()">
-    <div id="loading" style="display: none;">Loading...</div>
+    <textarea id="search" placeholder="Type your prompt..." onkeydown="if (event.key === 'Enter') sendToMainProcess()"></textarea>
+    <div id="loading" style="display: none;"></div>
     <div id="response" style="display: none;"></div>
   </body>
 </html>
