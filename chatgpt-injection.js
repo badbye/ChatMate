@@ -96,6 +96,7 @@ window.electronAPI.sendQuery((event, value) => {
 
 
 window.electronAPI.sendQuickQuery(async (event, value) => {
+    console.log(`value: ${JSON.stringify(value)}`)
     const {query, promptList, matchConversation} = value
     const matchQuery = matchQuickPrompt(query, promptList)
     // not match the quick prompt, send it as a normal query

@@ -44,8 +44,8 @@ function createMenu(app, window) {
                 click: () => {
                   // 创建新窗口以显示设置页面
                   let settingsWindow = new BrowserWindow({
-                    width: 600,
-                    height: 400,
+                    width: 1000,
+                    height: 800,
                     webPreferences: {
                       nodeIntegration: true,
                       contextIsolation: false,

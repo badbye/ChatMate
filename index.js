@@ -20,6 +20,10 @@ const conversationUrl = 'https://chat.openai.com/backend-api/conversation'
 // });
 let spotlightWin;
 let chatGPTWin;
+const devtools = {
+  chatgpt: true,
+  spotlight: false
+}
 
 function createSpotlightWindow() {
   spotlightWin = new BrowserWindow({
@@ -37,7 +41,7 @@ function createSpotlightWindow() {
   });
 
   spotlightWin.loadFile(path.join(__dirname, 'spotlight.html'));
-  // spotlightWin.webContents.openDevTools()
+  if (devtools.spotlight) spotlightWin.webContents.openDevTools()
 
     // 添加 blur 事件监听器
   spotlightWin.on('blur', () => {
@@ -102,7 +106,7 @@ function createChatGPTWindow () {
     // 在页面中注入脚本, 用于主线程和 chatGPT 窗口之间的通信
     chatGPTWin.webContents.executeJavaScript(readJS('chatgpt-injection.js'))
   })
-  // chatGPTWin.webContents.openDevTools()
+  if (devtools.chatgpt) { chatGPTWin.webContents.openDevTools() }
 }
 
 function initializeShortcuts() {
@@ -145,7 +149,7 @@ app.whenReady().then(async () => {
       {
         query, 
         promptList: store.get(SHORTCUT.quickPromptList, []),
-        matchConversation: store.get(SHORTCUT.matchConversation, false)
+        matchConversation: store.get(SHORTCUT.matchConversation, SHORTCUT.defaultMatchConversation)
       }
     )
   });
