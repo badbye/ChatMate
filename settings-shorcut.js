@@ -48,7 +48,7 @@ const addQuickPromptButton = document.querySelector('#add-quick-prompt');
 const quickPromptList = document.querySelector('#quick-prompt-list');
 const saveQuickPromptButton = document.querySelector('#save-quick-prompt');
 const matchConversation = document.querySelector('#match-conversation-title');
-matchConversation.checked = store.get(SHORTCUT.matchConversation, true);
+matchConversation.checked = store.get(SHORTCUT.matchConversation, SHORTCUT.defaultMatchConversation);
 
 matchConversation.addEventListener('change', (event) => {
   store.set(SHORTCUT.matchConversation, event.target.checked)

@@ -15,12 +15,61 @@
         background-color: azure;
         width: 100%;
         opacity: 0.8;
-        padding: 20px;
-        font-size: 24px;
+        padding: 10px 20px 5px 20px;
+        font-size: 20px;
         outline: none;
         border: none;
         flex-shrink: 0; /* 防止搜索框在内容增加时被挤压 */
+
+        resize: vertical;
+        min-height: 10px;
+        max-height: 200px;
+        overflow-y: auto;
       }
+      #loading {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        margin: auto;
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 5px solid #3498db;
+        animation: spin 2s linear infinite;
+        display: none;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        background-color: azure;
+        padding: 2px 5px 10px 5px;
+    }
+  
+    .tag {
+      background-color: #eee;
+      color: #333;
+      font-size: 12px;
+      border-radius: 5px;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+  
+    .tag:hover {
+      background-color: #ddd;
+    }
+    .hightlight {
+      background-color: cornflowerblue !important;
+      color: white !important;
+    }
+
       #response {
         background-color: whitesmoke;
         word-wrap: break-word;
@@ -38,28 +87,43 @@
     }
     </style>
     <script>
-        const { remote, ipcRenderer } = require('electron');
+        const { ipcRenderer } = require('electron');
         const maxHeight = 600;
         const minHeight = 100;
         // 在页面加载完成后自动聚焦到搜索框
         window.onload = function () {
-            document.getElementById('search').focus();
+          const searchInput = document.getElementById('search')
+          searchInput.focus();
+
+          // listen to #search change
+          searchInput.addEventListener('input', (event) => {
+            const query = event.target.value;
+            if (query === '') {
+              return 
+            }
+            hightlightTag(query);
+            // if end with a enter key, send query to main process
+            if (query.endsWith('\n')) {
+              searchInput.value = query.slice(0, -1);
+              sendToMainProcess();
+            }
+          });
+
+
+          // 按下 ESC 键时关闭窗口
+          document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+              window.close();
+            }
+          })
         };
 
-        // 按下 ESC 键时关闭窗口
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                window.close();
-            }
-        });
-
         ipcRenderer.on('set-spotlight-response', async (event, longText) => {
-            await showResponse(longText);
+          await showResponse(longText);
         });
 
         function sendToMainProcess() {
-          const searchInput = document.getElementById('search');
-          ipcRenderer.send('send-query', searchInput.value);
+          ipcRenderer.send('send-query', document.getElementById('search').value);
           clearResponse();
           document.getElementById('loading').style.display = 'flex';
         }
@@ -89,11 +153,53 @@
             document.body.style.overflowY = 'scroll';
           }
         }
-      </script>
+    </script>
   </head>
   <body>
-    <input id="search" type="text" placeholder="Type your prompt..." onkeydown="if (event.key === 'Enter') sendToMainProcess()">
-    <div id="loading" style="display: none;">Loading...</div>
-    <div id="response" style="display: none;"></div>
+    <!-- <div class="container"> -->
+      <textarea id="search" placeholder="Type your prompt..."></textarea>
+      <div id="loading" style="display: none;"></div>
+      <div class="tags"></div>
+      <div id="response" style="display: none;"></div>
+    <!-- </div> -->
+    <script>
+      const tagsContainer = document.querySelector('.tags');
+
+      // 添加一个新标签 prompt is a object, for example: {title: '', short: '', prompt: ''}
+      function addTag(prompt) {
+        if (prompt.title === '') return;
+        const tag = document.createElement('div');
+        tag.classList.add('tag');
+        tag.setAttribute('data-tag', prompt.short);
+        tag.textContent = prompt.title;
+        tag.addEventListener('click', () => {
+          clickTag(prompt.short);
+        });
+        tagsContainer.appendChild(tag);
+      }
+
+      function clickTag(tagVal) {
+        const seachInput = document.getElementById('search')
+        seachInput.value = tagVal + ' ';
+        seachInput.focus();
+      }
+
+      function hightlightTag(query) {
+        // add `hightlight` clsas to the tag whose data-tag is the prefix of query
+        const tags = document.querySelectorAll('.tag');
+        tags.forEach(tag => {
+          if (query.startsWith(tag.getAttribute('data-tag') + ' ')) {
+            tag.classList.add('hightlight');
+          } else {
+            tag.classList.remove('hightlight');
+          }
+        })
+      }
+
+      const Store = require('electron-store');
+      const {SHORTCUT} = require('./utils');
+      const store = new Store();
+      store.get(SHORTCUT.quickPromptList, []).forEach(addTag)
+    </script>
   </body>
 </html>

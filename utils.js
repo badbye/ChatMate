@@ -6,7 +6,8 @@ function controlKey(key) {
 const SHORTCUT = {
     global: "SHORTCUT_GLOBAL",
     quickPromptList: "SHORTCUT_QUICK_PROMPT_LIST",
-    matchConversation: "MATCH_CONVERSATION_TITLE"
+    matchConversation: "MATCH_CONVERSATION_TITLE",
+    defaultMatchConversation: true
 }
 
 const EXTENSIONS = "EXTENSION";
