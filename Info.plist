@@ -5,5 +5,8 @@
   <!-- 其他键值对省略 -->
   <key>NSMicrophoneUsageDescription</key>
   <string>用于录制和传输音频</string>
+
+  <key>NSGlobalEventsUsageDescription</key>
+  <string>This app needs to use global shortcuts to provide quick access to its features.</string>
 </dict>
 </plist>

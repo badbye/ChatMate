@@ -6,9 +6,9 @@
 安装依赖:
 
 ```
-export ELECTRON_MIRROR=https://npm.taobao.org/mirrors/electron/
+export ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
 export ELECTRON_BUILDER_BINARIES_MIRROR=https://npm.taobao.org/mirrors/electron-builder-binaries/
-npm install
+npm install --registry http://registry.npm.taobao.org/
 ```
 
 开发:
@@ -24,19 +24,7 @@ npx electron-builder --mac
 
 ## 快捷输入
 
-
 对话选择
-```javascript
-function selectTopic(topic) {
-    const conversations = document.querySelectorAll('.text-ellipsis')
-    for (let i = 0; i < conversations.length; i++) {
-        if (conversations[i].textContent === topic) {
-            conversations[i].click()
-            break
-        }
-    }
-}
-```
 
 ## 插件集成
 

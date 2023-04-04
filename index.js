@@ -10,6 +10,9 @@ const store = new Store();
 const createMenu = require('./menu');
 const conversationUrl = 'https://chat.openai.com/backend-api/conversation'
 
+function absolutePath(file) {
+  return path.join(__dirname, file);
+}
 // const mb = menubar({
 //   index: electron.remote.getCurrentWindow().webContents.getURL(), // 应用程序的主页面
 //   icon: path.join(__dirname, 'chatMate.png') // 菜单栏图标
@@ -36,7 +39,7 @@ function createSpotlightWindow() {
     },
   });
 
-  spotlightWin.loadFile(path.join(__dirname, 'spotlight.html'));
+  spotlightWin.loadFile(absolutePath('spotlight.html'));
   // spotlightWin.webContents.openDevTools()
 
     // 添加 blur 事件监听器
@@ -66,7 +69,7 @@ function createChatGPTWindow () {
     height: 800,
     webPreferences: {
       nodeIntegration: false,
-      preload: path.join(__dirname, 'preload.js'),
+      preload: absolutePath('preload.js'),
       clipboard: true
     },
   })
@@ -100,7 +103,7 @@ function createChatGPTWindow () {
   chatGPTWin.loadURL('https://chat.openai.com')
   chatGPTWin.webContents.on('did-finish-load', () => {
     // 在页面中注入脚本, 用于主线程和 chatGPT 窗口之间的通信
-    chatGPTWin.webContents.executeJavaScript(readJS('chatgpt-injection.js'))
+    chatGPTWin.webContents.executeJavaScript(readJS(absolutePath('chatgpt-injection.js')))
   })
   // chatGPTWin.webContents.openDevTools()
 }
