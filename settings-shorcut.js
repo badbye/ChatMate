@@ -1,46 +1,48 @@
 const {SHORTCUT} = require('./utils');
 
-const shortcutInput = document.querySelector('#shortcut-input');
-
-// set global shortcut
-const previsShortCut = store.get(SHORTCUT.global)
-if (previsShortCut) {
-    showGlobalShortcut(previsShortCut);
-}
-let recordingShortcut = false;
+//------------- set shortcut ----------------
+const quickTypeShortcut = document.querySelector('#quick-type-shortcut');
+const menuBarShorcut = document.querySelector('#menu-bar-shortcut');
+const shortcuts = [
+  {input: quickTypeShortcut, key: SHORTCUT.global, recording: false},
+  {input: menuBarShorcut, key: SHORTCUT.menu, recording: false}
+]
 let keysPressed = [];
 
-function showGlobalShortcut(shortcut) {
-  shortcutInput.value = shortcut;
-}
-
-shortcutInput.addEventListener('focus', () => {
-  recordingShortcut = true;
-  keysPressed = [];
-  shortcutInput.value = '';
-});
-
-shortcutInput.addEventListener('blur', () => {
-  recordingShortcut = false;
-});
-
-document.addEventListener('keydown', (event) => {
-  if (recordingShortcut) {
-    event.preventDefault();
-    keysPressed.push(event.key);
-    shortcutInput.value = keysPressed.join(' + ');
+shortcuts.forEach((shortcut) => {
+  // set initial value
+  if (store.get(shortcut.key)) {
+    shortcut.input.value = store.get(shortcut.key);
   }
-});
 
-document.addEventListener('keyup', (event) => {
-  if (recordingShortcut) {
-    event.preventDefault();
-    const shortcut = keysPressed.join('+');
-    ipcRenderer.send('shortcut-register-global', shortcut);
-    shortcutInput.blur();
-  }
-});
+  shortcut.input.addEventListener('focus', () => {
+    shortcut.recording = true;
+    keysPressed = [];
+    shortcut.input.value = '';
+  })
 
+  shortcut.input.addEventListener('blur', () => {
+    shortcut.recording = false;
+  });
+
+  shortcut.input.addEventListener('keydown', (event) => {
+    if (shortcut.recording) {
+      event.preventDefault();
+      keysPressed.push(event.key);
+      shortcut.input.value = keysPressed.join(' + ');
+    }
+  })
+
+  shortcut.input.addEventListener('keyup', (event) => {
+    if (shortcut.recording) {
+      event.preventDefault();
+      const accelerator = keysPressed.join('+');
+      ipcRenderer.send('shortcut-register', {accelerator, cacheKey: shortcut.key});
+      shortcut.input.blur();
+      keysPressed = [];
+    }
+  })
+})
 
 //------------- set quick prompt ----------------
 // 获取“Add Quick Prompt”按钮和“Quick Prompt List”列表

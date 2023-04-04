@@ -1,18 +1,42 @@
-// src/httpServer.js
+// this is a mock server of chatGPT: 
+
 const http = require('http');
 const url = require('url');
 const { ipcMain } = require('electron');
+const TurndownService = require('turndown');
+const turndownService = new TurndownService();
 
 var HTTP_QUERING = false;
 const HTTP_RESPONSE_EVENT = 'set-http-response';
 
 function isHttpQuerying() { return HTTP_QUERING; }
 
+function httpReponse(content) {
+  return {
+    id: Math.floor(Math.random() * 1000000).toString(),
+    object: "chat.completion",
+    created: Math.floor(Date.now() / 1000),
+    choices: [{
+      index: 0,
+      message: {
+        role: "assistant",
+        content: content,
+      },
+      finish_reason: "stop"
+    }],
+    usage: {
+      prompt_tokens: 9,
+      completion_tokens: 12,
+      total_tokens: 21
+    }
+  }
+}
+
 function addListener(resolve)  {
   return (event, result) => {
     console.log('recieve response from chatGPTWin: ' + JSON.stringify(result))
     if (result.isFinished) {
-      resolve(result.response);
+      resolve(turndownService.turndown(result.response));
     }
   }
 }
@@ -63,7 +87,7 @@ function startHttpServer(chatGPTWin) {
           // combine messages into a single string
           const result = await handleRequest(chatGPTWin, messages);
           removeListeners();
-          res.end(JSON.stringify({ success: true, message: result}));
+          res.end(JSON.stringify(httpReponse(result)));
         } catch (error) {
           res.statusCode = 400;
           res.end(JSON.stringify({ error: error.message || 'Bad request' }));

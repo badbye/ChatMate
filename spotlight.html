@@ -89,7 +89,7 @@
     }
     </style>
     <script>
-        const { ipcRenderer } = require('electron');
+        let { ipcRenderer } = require('electron');
         const maxHeight = 600;
         const minHeight = 100;
         // 在页面加载完成后自动聚焦到搜索框
@@ -110,7 +110,6 @@
               sendToMainProcess();
             }
           });
-
 
           // 按下 ESC 键时关闭窗口
           document.addEventListener('keydown', (event) => {

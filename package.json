@@ -4,7 +4,9 @@
   "description": "A ChatGPT Client build by Electron",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx electron .",
+    "build": "npx electron-builder --mac",
+    "build:win": "npx electron-builder --win" 
   },
   "author": "duyalei",
   "license": "ISC",
@@ -19,6 +21,15 @@
     "electron-store": "^8.1.0",
     "fs-extra": "^11.1.1",
     "jquery": "^3.6.4",
-    "mousetrap": "^1.6.5"
+    "mousetrap": "^1.6.5",
+    "turndown": "^7.1.2"
+  },
+  "build": {
+    "mac": {
+      "icon": "resources/icon-512.png"
+    },
+    "win": {
+      "icon": "resources/icon-512.png"
+    }
   }
 }

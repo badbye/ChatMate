@@ -1,35 +1,34 @@
-const { app, BrowserWindow, session, Menu, ipcMain, globalShortcut, clipboard, dialog } = require('electron')
+const { app, BrowserWindow, session, Menu, ipcMain, globalShortcut, Tray, dialog } = require('electron')
 const path = require('path')
 const Store = require('electron-store');
 const {SHORTCUT, EXTENSIONS, controlKey, readJS} = require('./utils');
 const { registerExtensions } = require('./extensions');
 const { startHttpServer, isHttpQuerying } = require('./httpServer');
 
-// const { menubar } = require('electron-menubar');
-
 const store = new Store();
 const createMenu = require('./menu');
+const chatGPTUrl=  "https://chat.openai.com/";
 const conversationUrl = 'https://chat.openai.com/backend-api/conversation'
 
 function absolutePath(file) {
   return path.join(__dirname, file);
 }
-// const mb = menubar({
-//   index: electron.remote.getCurrentWindow().webContents.getURL(), // 应用程序的主页面
-//   icon: path.join(__dirname, 'chatMate.png') // 菜单栏图标
-// });
 
-// mb.on('ready', () => {
-//   console.log('App is ready');
-// });
 let spotlightWin;
 let chatGPTWin;
+let trayGPTWin;
+let appIcon;
 const devtools = {
   chatgpt: true,
-  spotlight: false
+  spotlight: true,
+  tray: true,
 }
+const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36 Edg/109.0.1518.78'
 
 function createSpotlightWindow() {
+  if (spotlightWin) { 
+    return spotlightWin;
+  }
   spotlightWin = new BrowserWindow({
     width: 600,
     height: 100,
@@ -40,38 +39,26 @@ function createSpotlightWindow() {
       nodeIntegration: true,
       contextIsolation: false,
       clipboard: true,
-      nativeWindowOpen: true
     },
   });
 
   spotlightWin.loadFile(absolutePath('spotlight.html'));
   if (devtools.spotlight) spotlightWin.webContents.openDevTools()
-
-    // 添加 blur 事件监听器
-  spotlightWin.on('blur', () => {
-    spotlightWin.close();
-  });
-  
-  spotlightWin.on('closed', () => {
-    spotlightWin = null;
-  });
+  spotlightWin.on('closed', () => { spotlightWin = null })
+  toggleWindowEvent(spotlightWin);
+  return spotlightWin;
 }
 
 function isSpotlightOrHttpQuerying(headers) {
-  return (spotlightWin || isHttpQuerying) && headers['content-type'] && headers['content-type'].toString().includes('text/event-stream')
+  return ((spotlightWin && spotlightWin.isVisible()) || isHttpQuerying()) && headers['content-type'] && headers['content-type'].toString().includes('text/event-stream')
 }
 
 function createChatGPTWindow () {
-  const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36 Edg/109.0.1518.78'
-  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-    details.requestHeaders['User-Agent'] = userAgent;
-    callback({ cancel: false, requestHeaders: details.requestHeaders });
-  });
-
   // 创建浏览器窗口并加载指定网址
   chatGPTWin = new BrowserWindow({
     width: 1000,
     height: 800,
+    skipTaskbar: true,
     webPreferences: {
       nodeIntegration: false,
       preload: absolutePath('preload.js'),
@@ -88,7 +75,7 @@ function createChatGPTWindow () {
     if (isSpotlightOrHttpQuerying(details.responseHeaders)) {
       // extract the response from the chatGPT every 500ms
       chatGPTWin.webContents.executeJavaScript(`
-        var interval = setInterval(() => { sendReponse(false) }, 500)
+        var interval = setInterval(() => { sendReponse(false) }, 500);
       `)
     }
   });
@@ -100,12 +87,12 @@ function createChatGPTWindow () {
         if (interval) { clearInterval(interval) }
         sendReponse(false)
         // run again in case the response is not completed
-        setTimeout(() => { sendReponse(true) }, 300)
+        setTimeout(() => { sendReponse(true) }, 300);
       `)
     }
   })
 
-  chatGPTWin.loadURL('https://chat.openai.com')
+  chatGPTWin.loadURL(chatGPTUrl)
   chatGPTWin.webContents.on('did-finish-load', () => {
     // 在页面中注入脚本, 用于主线程和 chatGPT 窗口之间的通信
     chatGPTWin.webContents.executeJavaScript(readJS(absolutePath('chatgpt-injection.js')))
@@ -113,38 +100,120 @@ function createChatGPTWindow () {
   if (devtools.chatgpt) { chatGPTWin.webContents.openDevTools() }
 }
 
-function initializeShortcuts() {
-  var globalKey;
-  if (store.get(SHORTCUT.global)) {
-    globalKey = store.get(SHORTCUT.global);
-  } else {
-    globalKey = controlKey('M'); // 默认快捷键
+function createTrayWindow() {
+  if (trayGPTWin) {
+    return trayGPTWin;
   }
-  try {
-    setGlobalShortcut(globalKey)
-  } catch (err) {
-    dialog.showErrorBox('Error', `Register global shortcut failed: ${err.message}. Will delete the shortcut automatically.`);
-    store.delete(SHORTCUT.global);
-  }
-}
-
-function setGlobalShortcut(globalKey) {
-  console.log('change globalKey: ' + globalKey)
-  // deal with the possible error
-  globalShortcut.register(globalKey, () => {
-    if (!spotlightWin) {
-      createSpotlightWindow();
-    } else {
-      spotlightWin.close();
+  trayGPTWin = new BrowserWindow({
+    width: 550,
+    height: 700,
+    frame: false, // Remove window frame
+    resizable: false, // Disable window resizing
+    skipTaskbar: true, // Remove the window from the taskbar
+    alwaysOnTop: false, // Keep the window on top of other windows
+    webPreferences: {
+      nodeIntegration: false,
+      preload: absolutePath('preload.js'),
+      clipboard: true
     }
   })
-  store.set(SHORTCUT.global, globalKey);
+  trayGPTWin.loadURL(chatGPTUrl);
+  toggleWindowEvent(trayGPTWin);
+  trayGPTWin.webContents.on('did-finish-load', () => {
+    trayGPTWin.webContents.executeJavaScript(`
+      // hide window if press ESC
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          window.electronAPI.hideWindow('tray');
+        }
+      })
+    `)
+  })
+  if (devtools.tray) trayGPTWin.webContents.openDevTools()
+  return trayGPTWin;
 }
+
+function toggleWindowEvent(window) {
+  // Add event listeners to hide the window
+  window.on('blur', () => {
+    window.hide();
+  });
+
+  window.on('keydown', (event) => {
+    if (event.key === 'Escape') {
+      window.hide();
+    }
+  });
+}
+
+const windowShortcuts = [
+  {
+    cacheKey: SHORTCUT.global,
+    windowCreator: createSpotlightWindow,
+    defaultAccelerator: controlKey('M'),
+    trigger: () => { createSpotlightWindow() }
+  },
+  {
+    cacheKey: SHORTCUT.menu,
+    windowCreator: createTrayWindow,
+    defaultAccelerator: controlKey('W'),
+    trigger: () => {if (appIcon) appIcon.emit('click')}
+  }
+]
+
+function initializeShortcuts() {
+  for (const shortcut of windowShortcuts) {
+    const accelerator = store.get(shortcut.cacheKey, shortcut.defaultAccelerator);
+    registerWindowShortcut(shortcut.cacheKey, accelerator)
+  }
+}
+
+function registerWindowShortcut(cacheKey, accelerator) {
+  const obj = windowShortcuts.find(s => s.cacheKey === cacheKey)
+  if (obj) {
+    try {
+      console.log(`register for ${cacheKey}: ${accelerator}`)
+      globalShortcut.register(accelerator, () => {
+        obj.trigger();
+      })
+      store.set(cacheKey, accelerator);
+    } catch (err) {
+      dialog.showErrorBox('Error', `Register global shortcut failed: ${err.message}. Will delete the shortcut automatically.`);
+      store.delete(cacheKey);
+    }
+  }
+}
+
 // 当应用程序准备就绪时创建窗口
 app.whenReady().then(async () => {
-  await registerExtensions(session, store.get(EXTENSIONS, []));
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    details.requestHeaders['User-Agent'] = userAgent;
+    callback({ cancel: false, requestHeaders: details.requestHeaders });
+  });
 
+  await registerExtensions(session, store.get(EXTENSIONS, []));
   initializeShortcuts();
+
+  // set tray icon and window
+  appIcon = new Tray(absolutePath('resources/icon-24Template.png'));
+  appIcon.setToolTip('ChatMate')
+  appIcon.on('click', () => {
+    trayWin = createTrayWindow();
+    const position = appIcon.getBounds();
+    console.log(`position: ${position.x}, ${position.y}`)
+    trayGPTWin.setBounds({
+      x: position.x,
+      y: position.y - 20, // Put the window under the icon
+      width: 550,
+      height: 700,
+    });
+    console.log('is tray visible: ', trayGPTWin.isVisible())
+    if (trayWin.isVisible()) {
+      trayWin.hide();
+    } else {
+      trayWin.show();
+    }
+  })
 
   // 监听来自 spotlight 的消息
   ipcMain.on('send-query', (event, query) => {
@@ -160,20 +229,21 @@ app.whenReady().then(async () => {
 
   // 接收到 chatGPT 的响应
   ipcMain.on('set-response', (event, result) => {
-    console.log('result: ', JSON.stringify(result))
-    if (spotlightWin) {
+    if (spotlightWin && spotlightWin.isVisible()) {
       spotlightWin.webContents.send('set-spotlight-response', result.response)
     }
   })
 
-  ipcMain.on('shortcut-register-global', (event, key) => {
-    if (store.get(SHORTCUT.global)) {
-      const key = store.get(SHORTCUT.global);
-      if (globalShortcut.isRegistered(key)) {
-        globalShortcut.unregister(key)
+  ipcMain.on('shortcut-register', (event, value) => {
+    console.log('value: ', JSON.stringify(value))
+    const {accelerator, cacheKey} = value
+    const previousShortcut = store.get(cacheKey)
+    if (previousShortcut) {
+      if (globalShortcut.isRegistered(previousShortcut)) {
+        globalShortcut.unregister(previousShortcut)
       }
     }
-    store.set(SHORTCUT.global, key);
+    registerWindowShortcut(cacheKey, accelerator)
   });
 
   ipcMain.on('save-settings', (event, settings) => {
@@ -181,11 +251,23 @@ app.whenReady().then(async () => {
     store.set('settings', settings);
   })
 
+  // ipcMain.on('hide-window', (event, key) => {
+  //   console.log("event.sender.id: " + event.sender.id + "; key: " + key)
+  //   if (key === 'spotlight' && spotlightWin) {
+  //     spotlightWin.hide()
+  //   } else if (key === 'tray' && trayGPTWin) {
+  //     trayGPTWin.hide()
+  //   }
+  //   // BrowserWindow.getAllWindows().forEach(win => console.log(win.id))
+  //   // const win = BrowserWindow.getAllWindows().find(win => win.id == event.sender.id)
+  //   // if (win) win.hide();
+  // })
+
   createChatGPTWindow();
   startHttpServer(chatGPTWin);
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createChatGPTWindow()
-  })
+  // app.on('activate', () => {
+  //   if (BrowserWindow.getAllWindows().length === 0) createChatGPTWindow()
+  // })
 })
 
 app.on('window-all-closed', () => {
