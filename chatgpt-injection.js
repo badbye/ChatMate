@@ -1,6 +1,12 @@
 // 选择对话
 
 const MAX_WAIT_SECONDS = 3;
+const METHODS = {
+    http: 'http',
+    quick: 'quick',
+}
+var queryMethod = METHODS.quick;
+var interval;
 
 async function selectTopic(topic) {
     if (currentConversationTitle() === topic) {
@@ -82,15 +88,26 @@ function matchQuickPrompt(text, quickPromptList) {
     return {match: false, body: text, prompt: Object()};
 }
 
-function sendReponse() {
+function sendReponse(isFinished) {
+    console.log('send response for ' + queryMethod + '; isFinished: ' + isFinished)
     const x = document.querySelectorAll('.markdown')
     const response = x[x.length-1].innerHTML
-    console.log('send response')
-    window.electronAPI.setResponse(response)
+    if (queryMethod === METHODS.quick) {
+        window.electronAPI.setResponse({response, isFinished})
+    } else if (queryMethod === METHODS.http) {
+        window.electronAPI.setHttpResponse({response, isFinished})
+    }
 }
 
 window.electronAPI.sendQuery((event, value) => {
     console.log('recieve value: ' + value)
+    queryMethod = METHODS.quick;
+    sendMsg(value)
+})
+
+window.electronAPI.sendHttpQuery((event, value) => {
+    console.log('recieve http request: ' + value)
+    queryMethod = METHODS.http;
     sendMsg(value)
 })
 

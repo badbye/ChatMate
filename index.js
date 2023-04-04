@@ -3,6 +3,7 @@ const path = require('path')
 const Store = require('electron-store');
 const {SHORTCUT, EXTENSIONS, controlKey, readJS} = require('./utils');
 const { registerExtensions } = require('./extensions');
+const { startHttpServer, isHttpQuerying } = require('./httpServer');
 
 // const { menubar } = require('electron-menubar');
 
@@ -24,7 +25,7 @@ function absolutePath(file) {
 let spotlightWin;
 let chatGPTWin;
 const devtools = {
-  chatgpt: false,
+  chatgpt: true,
   spotlight: false
 }
 
@@ -56,8 +57,8 @@ function createSpotlightWindow() {
   });
 }
 
-function isSpotlightQuerying(headers) {
-  return spotlightWin && headers['content-type'] && headers['content-type'].toString().includes('text/event-stream')
+function isSpotlightOrHttpQuerying(headers) {
+  return (spotlightWin || isHttpQuerying) && headers['content-type'] && headers['content-type'].toString().includes('text/event-stream')
 }
 
 function createChatGPTWindow () {
@@ -84,22 +85,22 @@ function createChatGPTWindow () {
   const ses = chatGPTWin.webContents.session;
   const conversationFilter = { urls: [conversationUrl] }
   ses.webRequest.onResponseStarted(conversationFilter, (details, callback) => {
-    if (isSpotlightQuerying(details.responseHeaders)) {
+    if (isSpotlightOrHttpQuerying(details.responseHeaders)) {
       // extract the response from the chatGPT every 500ms
       chatGPTWin.webContents.executeJavaScript(`
-        var interval = setInterval(() => { sendReponse() }, 500)
+        var interval = setInterval(() => { sendReponse(false) }, 500)
       `)
     }
   });
 
   ses.webRequest.onCompleted(conversationFilter, (details, callback) => {
     // extract the response from the chatGPT when the response is completed
-    if (isSpotlightQuerying(details.responseHeaders)) {
+    if (isSpotlightOrHttpQuerying(details.responseHeaders)) {
       chatGPTWin.webContents.executeJavaScript(`
         if (interval) { clearInterval(interval) }
-        sendReponse()
+        sendReponse(false)
         // run again in case the response is not completed
-        setTimeout(() => { sendReponse() }, 300)
+        setTimeout(() => { sendReponse(true) }, 300)
       `)
     }
   })
@@ -158,9 +159,10 @@ app.whenReady().then(async () => {
   });
 
   // 接收到 chatGPT 的响应
-  ipcMain.on('set-response', (event, reponse) => {
+  ipcMain.on('set-response', (event, result) => {
+    console.log('result: ', JSON.stringify(result))
     if (spotlightWin) {
-      spotlightWin.webContents.send('set-spotlight-response', reponse)
+      spotlightWin.webContents.send('set-spotlight-response', result.response)
     }
   })
 
@@ -180,6 +182,7 @@ app.whenReady().then(async () => {
   })
 
   createChatGPTWindow();
+  startHttpServer(chatGPTWin);
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createChatGPTWindow()
   })

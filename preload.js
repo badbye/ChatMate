@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('versions', {
 
 contextBridge.exposeInMainWorld('electronAPI', {
     sendQuery: (callback) => ipcRenderer.on('send-query', callback),
+    sendHttpQuery: (callback) => ipcRenderer.on('send-http-query', callback),
     sendQuickQuery: (callback) => ipcRenderer.on('send-quick-query', callback),
-    setResponse: (response) => ipcRenderer.send('set-response', response)
+    setResponse: (callback) => ipcRenderer.send('set-response', callback),
+    setHttpResponse: (callback) => ipcRenderer.send('set-http-response', callback)
 })
