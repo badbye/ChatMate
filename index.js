@@ -19,9 +19,9 @@ let chatGPTWin;
 let trayGPTWin;
 let appIcon;
 const devtools = {
-  chatgpt: true,
-  spotlight: true,
-  tray: true,
+  chatgpt: false,
+  spotlight: false,
+  tray: false,
 }
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36 Edg/109.0.1518.78'
 
@@ -199,15 +199,14 @@ app.whenReady().then(async () => {
   appIcon.setToolTip('ChatMate')
   appIcon.on('click', () => {
     trayWin = createTrayWindow();
+    trayWin.hide();
     const position = appIcon.getBounds();
-    console.log(`position: ${position.x}, ${position.y}`)
     trayGPTWin.setBounds({
       x: position.x,
       y: position.y - 20, // Put the window under the icon
       width: 550,
       height: 700,
     });
-    console.log('is tray visible: ', trayGPTWin.isVisible())
     if (trayWin.isVisible()) {
       trayWin.hide();
     } else {
@@ -235,7 +234,6 @@ app.whenReady().then(async () => {
   })
 
   ipcMain.on('shortcut-register', (event, value) => {
-    console.log('value: ', JSON.stringify(value))
     const {accelerator, cacheKey} = value
     const previousShortcut = store.get(cacheKey)
     if (previousShortcut) {
@@ -251,23 +249,19 @@ app.whenReady().then(async () => {
     store.set('settings', settings);
   })
 
-  // ipcMain.on('hide-window', (event, key) => {
-  //   console.log("event.sender.id: " + event.sender.id + "; key: " + key)
-  //   if (key === 'spotlight' && spotlightWin) {
-  //     spotlightWin.hide()
-  //   } else if (key === 'tray' && trayGPTWin) {
-  //     trayGPTWin.hide()
-  //   }
-  //   // BrowserWindow.getAllWindows().forEach(win => console.log(win.id))
-  //   // const win = BrowserWindow.getAllWindows().find(win => win.id == event.sender.id)
-  //   // if (win) win.hide();
-  // })
+  ipcMain.on('hide-window', (event, key) => {
+    if (key === 'spotlight' && spotlightWin) {
+      spotlightWin.hide()
+    } else if (key === 'tray' && trayGPTWin) {
+      trayGPTWin.hide()
+    }
+  })
 
   createChatGPTWindow();
   startHttpServer(chatGPTWin);
-  // app.on('activate', () => {
-  //   if (BrowserWindow.getAllWindows().length === 0) createChatGPTWindow()
-  // })
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createChatGPTWindow()
+  })
 })
 
 app.on('window-all-closed', () => {
@@ -275,15 +269,3 @@ app.on('window-all-closed', () => {
   globalShortcut.unregisterAll();
   if (process.platform !== 'darwin') app.quit()
 })
-
-// if (process.platform === 'darwin') {
-//   app.on('will-finish-launching', () => {
-//     // 加载 Info.plist 文件
-//     const plistPath = path.join(__dirname, 'Info.plist');
-//     app.setAboutPanelOptions({ applicationName: app.name, version: app.getVersion() });
-//     app.setActivationPolicy('regular');
-//     app.dock.hide();
-//     app.setAboutPanelOptions({ applicationName: app.name, version: app.getVersion() });
-//     // app.dock.setIcon(path.join(__dirname, '..', 'icon.icns'));
-//   });
-// }

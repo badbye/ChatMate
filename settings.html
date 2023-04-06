@@ -108,6 +108,7 @@
     const { ipcRenderer } = require('electron');
     const Store = require('electron-store');
     const store = new Store();
+    window.$ = window.jQuery = require('jquery');
   </script>
   <!-- 引入 Bootstrap JS 文件和 FontAwesome 图标库 -->
   <script src="resources/popper-1.12.9.min.js"></script>
