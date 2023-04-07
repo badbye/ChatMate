@@ -159,7 +159,7 @@ const windowShortcuts = [
     cacheKey: SHORTCUT.menu,
     windowCreator: createTrayWindow,
     defaultAccelerator: controlKey('W'),
-    trigger: () => {if (appIcon) appIcon.emit('click')}
+    trigger: () => {if (appIcon) appIcon.emit('click', true)}
   }
 ]
 
@@ -203,9 +203,8 @@ app.whenReady().then(async () => {
   // set tray icon and window
   appIcon = new Tray(absolutePath('resources/icon-24Template.png'));
   appIcon.setToolTip('ChatMate')
-  appIcon.on('click', () => {
+  appIcon.on('click', (event, vis) => {
     trayWin = createTrayWindow();
-    trayWin.hide();
     const position = appIcon.getBounds();
     trayGPTWin.setBounds({
       x: position.x,
@@ -213,10 +212,12 @@ app.whenReady().then(async () => {
       width: 550,
       height: 700,
     });
-    if (trayWin.isVisible()) {
-      trayWin.hide();
-    } else {
+
+    // always (false || true)
+    if (vis === true || !trayWin.isVisible()) {
       trayWin.show();
+    } else {
+      trayWin.hide();
     }
   })
 
