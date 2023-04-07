@@ -19,7 +19,7 @@ let chatGPTWin;
 let trayGPTWin;
 let appIcon;
 const devtools = {
-  chatgpt: false,
+  chatgpt: true,
   spotlight: false,
   tray: false,
 }
@@ -50,6 +50,8 @@ function createSpotlightWindow() {
 }
 
 function isSpotlightOrHttpQuerying(headers) {
+  const http = isHttpQuerying()
+  console.log("isSpotlightOrHttpQuerying: " + http + ", " + (spotlightWin && spotlightWin.isVisible()))
   return ((spotlightWin && spotlightWin.isVisible()) || isHttpQuerying()) && headers['content-type'] && headers['content-type'].toString().includes('text/event-stream')
 }
 
@@ -151,7 +153,7 @@ const windowShortcuts = [
     cacheKey: SHORTCUT.global,
     windowCreator: createSpotlightWindow,
     defaultAccelerator: controlKey('M'),
-    trigger: () => { createSpotlightWindow() }
+    trigger: () => { createSpotlightWindow().show() }
   },
   {
     cacheKey: SHORTCUT.menu,
@@ -174,7 +176,11 @@ function registerWindowShortcut(cacheKey, accelerator) {
     try {
       console.log(`register for ${cacheKey}: ${accelerator}`)
       globalShortcut.register(accelerator, () => {
-        obj.trigger();
+        try {
+          obj.trigger();
+        } catch (err) {
+          dialog.showErrorBox('Error', `Create window failed: ${err.message}`);
+        }
       })
       store.set(cacheKey, accelerator);
     } catch (err) {

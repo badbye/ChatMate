@@ -87,13 +87,14 @@ function startHttpServer(chatGPTWin) {
           // combine messages into a single string
           const result = await handleRequest(chatGPTWin, messages);
           removeListeners();
+          HTTP_QUERING = false;
           res.end(JSON.stringify(httpReponse(result)));
         } catch (error) {
           res.statusCode = 400;
+          HTTP_QUERING = false;
           res.end(JSON.stringify({ error: error.message || 'Bad request' }));
         }
       });
-      HTTP_QUERING = false;
     } else {
       res.statusCode = 404;
       res.end(JSON.stringify({ error: 'Not found' }));
