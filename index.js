@@ -19,7 +19,7 @@ let chatGPTWin;
 let trayGPTWin;
 let appIcon;
 const devtools = {
-  chatgpt: true,
+  chatgpt: false,
   spotlight: false,
   tray: false,
 }
