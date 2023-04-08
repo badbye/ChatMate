@@ -3,7 +3,7 @@ const path = require('path')
 const Store = require('electron-store');
 const {SHORTCUT, EXTENSIONS, controlKey, readJS} = require('./utils');
 const { registerExtensions } = require('./extensions');
-const { startHttpServer, isHttpQuerying } = require('./httpServer');
+const { startHttpServer, stopHttpServer, isHttpQuerying } = require('./httpServer');
 
 const store = new Store();
 const createMenu = require('./menu');
@@ -267,12 +267,16 @@ app.whenReady().then(async () => {
   createChatGPTWindow();
   startHttpServer(chatGPTWin);
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createChatGPTWindow()
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createChatGPTWindow()
+    }
   })
 })
 
 app.on('window-all-closed', () => {
-  globalShortcut.unregister('CmdOrCtrl+Space');
-  globalShortcut.unregisterAll();
-  if (process.platform !== 'darwin') app.quit()
+  if (process.platform !== 'darwin') {
+    globalShortcut.unregisterAll();
+    stopHttpServer();
+    app.quit()
+  }
 })

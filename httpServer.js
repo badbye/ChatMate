@@ -7,6 +7,7 @@ const TurndownService = require('turndown');
 const turndownService = new TurndownService();
 
 var HTTP_QUERING = false;
+var server;
 const HTTP_RESPONSE_EVENT = 'set-http-response';
 
 function isHttpQuerying() { return HTTP_QUERING; }
@@ -63,7 +64,7 @@ function handleRequest(chatGPTWin, messages) {
 
 function startHttpServer(chatGPTWin) {
   // 创建一个 HTTP 服务器
-  const server = http.createServer(async (req, res) => {
+  server = http.createServer(async (req, res) => {
     const parsedUrl = url.parse(req.url, true);
     const method = req.method;
   
@@ -108,7 +109,12 @@ function startHttpServer(chatGPTWin) {
   });
 }
 
+function stopHttpServer() {
+  if (server) server.close();
+}
+
 module.exports = {
   startHttpServer,
+  stopHttpServer,
   isHttpQuerying
 };
