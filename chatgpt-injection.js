@@ -63,18 +63,9 @@ function currentConversationTitle() {
 // 发送消息
 function sendMsg(msg) {
     const textarea = document.querySelector('textarea');
-    textarea.value = msg;
-    const enterKeyEvent = new KeyboardEvent('keydown', {
-        code: 'Enter',
-        key: 'Enter',
-        charCode: 13,
-        keyCode: 13,
-        which: 13
-    })
-
-    // 在 textarea 上触发键盘事件
-    textarea.dispatchEvent(enterKeyEvent)
     textarea.focus()
+    textarea.value = msg;
+    textarea.nextElementSibling.disabled = false
     textarea.nextElementSibling.click()
 }
 
